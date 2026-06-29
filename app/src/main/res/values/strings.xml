@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">PremiumApp</string>
+    <string name="welcome_title">Bienvenido a PremiumApp</string>
+    <string name="welcome_subtitle">Tu experiencia premium comienza aquí</string>
+    <string name="login_button">Iniciar Sesión</string>
+    <string name="register_button">Crear Cuenta</string>
+    <string name="email_hint">Correo Electrónico</string>
+    <string name="password_hint">Contraseña</string>
+    <string name="forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="google_sign_in">Iniciar sesión con Google</string>
+    <string name="name_hint">Nombre</string>
+    <string name="username_hint">Nombre de Usuario</string>
+    <string name="confirm_password_hint">Confirmar Contraseña</string>
+    <string name="birthdate_hint">Fecha de Nacimiento</string>
+    <string name="profile_photo_optional">Foto de Perfil (Opcional)</string>
+    <string name="terms_and_conditions">Acepto los Términos y Condiciones</string>
+    <string name="sign_up_button">Registrarse</string>
+    <string name="home_tab">Inicio</string>
+    <string name="ai_tab">IA</string>
+    <string name="upload_tab">Subir</string>
+    <string name="profile_tab">Perfil</string>
+    <string name="business_tab">Negocios</string>
+</resources>
