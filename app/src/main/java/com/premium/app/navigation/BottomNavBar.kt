@@ -1,145 +1,90 @@
-package com.premium.app.navigation
+package com.premium.app
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.BusinessCenter
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.premium.app.R
-import com.premium.app.utils.Constants
+import androidx.navigation.compose.rememberNavController
 
-data class BottomNavItem(
-    val name: String,
-    val route: String,
-    val icon: ImageVector,
-    val badgeCount: Int = 0
-)
+sealed class BottomNavItem(val route: String, val label: String, val icon: ImageVector) {
+    object Home : BottomNavItem("home", "Inicio", Icons.Default.Home)
+    object AI : BottomNavItem("ai", "IA", Icons.Default.Star)
+    object Upload : BottomNavItem("upload", "Subir", Icons.Default.Add)
+    object Profile : BottomNavItem("profile", "Perfil", Icons.Default.Person)
+    object Business : BottomNavItem("business", "Negocios", Icons.Default.Star)
+}
 
 @Composable
-fun BottomNavBar(
-    navController: NavController,
-    bottomBarState: Boolean
-) {
+fun BottomNavBar(navController: NavController, onFabClick: () -> Unit) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
     val items = listOf(
-        BottomNavItem(name = stringResource(R.string.home_tab), route = "home", icon = Icons.Default.Home),
-        BottomNavItem(name = stringResource(R.string.ai_tab), route = "ai", icon = Icons.Default.Psychology),
-        BottomNavItem(name = stringResource(R.string.profile_tab), route = "profile", icon = Icons.Default.Person),
-        BottomNavItem(name = stringResource(R.string.business_tab), route = "business", icon = Icons.Default.BusinessCenter)
+        BottomNavItem.Home,
+        BottomNavItem.AI,
+        BottomNavItem.Upload,
+        BottomNavItem.Profile,
+        BottomNavItem.Business
     )
 
-    AnimatedVisibility(
-        visible = bottomBarState,
-        enter = slideInVertically(initialOffsetY = { it }, animationSpec = tween(Constants.ANIMATION_DURATION_MS)),
-        exit = slideOutVertically(targetOffsetY = { it }, animationSpec = tween(Constants.ANIMATION_DURATION_MS))
+    NavigationBar(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(80.dp) // Ajusta la altura si es necesario
+            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
+        // containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp) // Opcional: para elevar el color
     ) {
-        BottomAppBar(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            tonalElevation = 8.dp
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                items.take(2).forEach { item ->
-                    BottomNavItemView(item = item, currentRoute = currentRoute, navController = navController)
-                }
-
-                // Central Floating Action Button
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .padding(bottom = 16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    FloatingActionButton(
-                        onClick = { /* TODO: Handle upload action */ },
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                        shape = CircleShape,
-                        modifier = Modifier.size(56.dp)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.upload_tab))
+        items.forEach { item ->
+            val selected = currentRoute == item.route
+            NavigationBarItem(
+                icon = { Icon(item.icon, contentDescription = item.label) },
+                label = { Text(item.label) },
+                selected = selected,
+                onClick = {
+                    if (item == BottomNavItem.Upload) {
+                        onFabClick()
+                    } else {
+                        navController.navigate(item.route) {
+                            // Evita múltiples copias de la misma pantalla en la pila
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
+                            }
+                            // Evita múltiples copias del mismo elemento cuando se selecciona
+                            launchSingleTop = true
+                            // Restaura el estado cuando se vuelve a seleccionar el elemento
+                            restoreState = true
+                        }
                     }
                 }
-
-                items.takeLast(2).forEach { item ->
-                    BottomNavItemView(item = item, currentRoute = currentRoute, navController = navController)
-                }
-            }
+            )
         }
     }
 }
 
+@Preview(showBackground = true)
 @Composable
-fun BottomNavItemView(
-    item: BottomNavItem,
-    currentRoute: String?,
-    navController: NavController
-) {
-    val selected = currentRoute == item.route
-    val contentColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .height(64.dp)
-            .weight(1f)
-    ) {
-        IconButton(onClick = { navController.navigate(item.route) {
-            popUpTo(navController.graph.startDestinationId)
-            launchSingleTop = true
-        } }) {
-            Icon(
-                imageVector = item.icon,
-                contentDescription = item.name,
-                tint = contentColor,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-        Text(
-            text = item.name,
-            style = MaterialTheme.typography.labelSmall,
-            color = contentColor
-        )
+fun PreviewBottomNavBar() {
+    val navController = rememberNavController()
+    Column(modifier = Modifier.padding(top = 500.dp)) { // Para que la barra se vea en la parte inferior en el preview
+        BottomNavBar(navController = navController, onFabClick = { /* Do nothing for preview */ })
     }
 }
