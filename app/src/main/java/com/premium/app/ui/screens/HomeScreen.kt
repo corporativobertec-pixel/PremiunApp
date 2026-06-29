@@ -52,7 +52,7 @@ fun HomeScreen(homeViewModel: HomeViewModel = viewModel()) {
                 )
             )
         }
-    ) {\ paddingValues ->
+    ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             LazyColumn(state = listState, contentPadding = PaddingValues(8.dp)) {
                 items(feedPosts, key = { it.id }) {
