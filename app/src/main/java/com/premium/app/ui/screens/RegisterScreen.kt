@@ -1,332 +1,287 @@
-package com.premium.app.ui.screens
+package com.premium.app
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.premium.app.R
-import com.premium.app.navigation.Screen
-import com.premium.app.ui.theme.PremiumAppTheme
-import com.premium.app.viewmodels.AuthViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
-@Composable
-fun RegisterScreen(navController: NavController, authViewModel: AuthViewModel = hiltViewModel()) {
+// Reutilizamos el AuthViewModel del LoginScreen y le añadimos las propiedades y funciones de registro.
+// En una aplicación real, esto podría dividirse en RegisterViewModel o tener un AuthViewModel más robusto.
+class AuthViewModel : androidx.lifecycle.ViewModel() {
+    // Login states (mantener para coherencia si se usa el mismo VM)
+    var loginEmail by mutableStateOf("")
+    var loginPassword by mutableStateOf("")
 
-    var passwordVisible by remember { mutableStateOf(false) }
-    var confirmPasswordVisible by remember { mutableStateOf(false) }
+    // Register states
+    var registerName by mutableStateOf("")
+    var registerUsername by mutableStateOf("")
+    var registerEmail by mutableStateOf("")
+    var registerPassword by mutableStateOf("")
+    var registerConfirmPassword by mutableStateOf("")
+    var registerBirthdate by mutableStateOf("") // Formato YYYY-MM-DD
+    var acceptedTerms by mutableStateOf(false)
 
-    // Observe registration success
-    LaunchedEffect(authViewModel.isRegisterSuccess) {
-        if (authViewModel.isRegisterSuccess) {
-            navController.navigate(Screen.Main.route) {
-                popUpTo(Screen.Welcome.route) { inclusive = true }
-            }
+    var authState by mutableStateOf("Idle") // Puede ser "Idle", "Loading", "Success", "Error", "Registered"
+
+    // Validation properties
+    val isNameValid: Boolean get() = registerName.length >= 3
+    val isUsernameValid: Boolean get() = registerUsername.length >= 3
+    val isEmailValid: Boolean get() = android.util.Patterns.EMAIL_ADDRESS.matcher(registerEmail).matches()
+    val isPasswordValid: Boolean get() = registerPassword.length >= 6
+    val isConfirmPasswordValid: Boolean get() = registerPassword == registerConfirmPassword && registerConfirmPassword.isNotEmpty()
+    val isBirthdateValid: Boolean get() {
+        return try {
+            val date = LocalDate.parse(registerBirthdate, DateTimeFormatter.ISO_LOCAL_DATE)
+            date.isBefore(LocalDate.now().minusYears(13)) // Mayor de 13 años
+        } catch (e: DateTimeParseException) {
+            false
         }
     }
+
+    // Login functions
+    fun updateLoginEmail(email: String) {
+        loginEmail = email
+    }
+
+    fun updateLoginPassword(password: String) {
+        loginPassword = password
+    }
+
+    fun login() {
+        authState = "Loading"
+        // Lógica de login simulada
+        if (loginEmail == "test@example.com" && loginPassword == "password") {
+            authState = "Success"
+        } else {
+            authState = "Error"
+        }
+    }
+
+    fun sendPasswordReset() {
+        authState = "Loading"
+        // Lógica de recuperación de contraseña simulada
+        if (loginEmail.isNotEmpty()) {
+            authState = "PasswordResetSent"
+        } else {
+            authState = "Error"
+        }
+    }
+
+    // Register functions
+    fun updateRegisterName(name: String) { registerName = name }
+    fun updateRegisterUsername(username: String) { registerUsername = username }
+    fun updateRegisterEmail(email: String) { registerEmail = email }
+    fun updateRegisterPassword(password: String) { registerPassword = password }
+    fun updateRegisterConfirmPassword(confirmPassword: String) { registerConfirmPassword = confirmPassword }
+    fun updateRegisterBirthdate(birthdate: String) { registerBirthdate = birthdate }
+    fun updateAcceptedTerms(accepted: Boolean) { acceptedTerms = accepted }
+
+    fun register() {
+        authState = "Loading"
+        if (isNameValid && isUsernameValid && isEmailValid && isPasswordValid && isConfirmPasswordValid && isBirthdateValid && acceptedTerms) {
+            // Simular registro exitoso
+            authState = "Registered"
+        } else {
+            authState = "Error"
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RegisterScreen(authViewModel: AuthViewModel = viewModel()) {
+    val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp)
-            .verticalScroll(rememberScrollState()),
+            .padding(16.dp)
+            .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = stringResource(R.string.register_button),
+            text = "Crear Cuenta",
             style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.primary
+            modifier = Modifier.padding(bottom = 24.dp)
         )
-        Spacer(modifier = Modifier.height(32.dp))
 
-        // Name Input
+        // Nombre
         OutlinedTextField(
             value = authViewModel.registerName,
-            onValueChange = { authViewModel.validateName(it) },
-            label = { Text(stringResource(R.string.name_hint)) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            isError = !authViewModel.isNameValid,
+            onValueChange = { authViewModel.updateRegisterName(it) },
+            label = { Text("Nombre") },
+            leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Nombre Icon") },
             trailingIcon = {
-                AnimatedVisibility(
-                    visible = authViewModel.registerName.isNotBlank(),
-                    enter = fadeIn(animationSpec = tween(250)),
-                    exit = fadeOut(animationSpec = tween(250))
-                ) {
+                if (authViewModel.registerName.isNotEmpty()) {
                     if (authViewModel.isNameValid) {
-                        Icon(Icons.Default.CheckCircle, "", tint = Color.Green)
+                        Icon(Icons.Default.Check, contentDescription = "Válido", tint = Color.Green)
                     } else {
-                        Icon(Icons.Default.Error, "", tint = Color.Red)
+                        Icon(Icons.Default.Close, contentDescription = "Inválido", tint = Color.Red)
                     }
                 }
             },
-            shape = MaterialTheme.shapes.medium
+            modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Username Input
+        // Username
         OutlinedTextField(
             value = authViewModel.registerUsername,
-            onValueChange = { authViewModel.validateUsername(it) },
-            label = { Text(stringResource(R.string.username_hint)) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            isError = !authViewModel.isUsernameValid,
+            onValueChange = { authViewModel.updateRegisterUsername(it) },
+            label = { Text("Nombre de Usuario") },
+            leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Username Icon") },
             trailingIcon = {
-                AnimatedVisibility(
-                    visible = authViewModel.registerUsername.isNotBlank(),
-                    enter = fadeIn(animationSpec = tween(250)),
-                    exit = fadeOut(animationSpec = tween(250))
-                ) {
+                if (authViewModel.registerUsername.isNotEmpty()) {
                     if (authViewModel.isUsernameValid) {
-                        Icon(Icons.Default.CheckCircle, "", tint = Color.Green)
+                        Icon(Icons.Default.Check, contentDescription = "Válido", tint = Color.Green)
                     } else {
-                        Icon(Icons.Default.Error, "", tint = Color.Red)
+                        Icon(Icons.Default.Close, contentDescription = "Inválido", tint = Color.Red)
                     }
                 }
             },
-            shape = MaterialTheme.shapes.medium
+            modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Email Input
+        // Email
         OutlinedTextField(
             value = authViewModel.registerEmail,
-            onValueChange = { authViewModel.validateEmail(it) },
-            label = { Text(stringResource(R.string.email_hint)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            modifier = Modifier.fillMaxWidth(),
-            isError = !authViewModel.isEmailValid,
+            onValueChange = { authViewModel.updateRegisterEmail(it) },
+            label = { Text("Email") },
+            leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email Icon") },
             trailingIcon = {
-                AnimatedVisibility(
-                    visible = authViewModel.registerEmail.isNotBlank(),
-                    enter = fadeIn(animationSpec = tween(250)),
-                    exit = fadeOut(animationSpec = tween(250))
-                ) {
+                if (authViewModel.registerEmail.isNotEmpty()) {
                     if (authViewModel.isEmailValid) {
-                        Icon(Icons.Default.CheckCircle, "", tint = Color.Green)
+                        Icon(Icons.Default.Check, contentDescription = "Válido", tint = Color.Green)
                     } else {
-                        Icon(Icons.Default.Error, "", tint = Color.Red)
+                        Icon(Icons.Default.Close, contentDescription = "Inválido", tint = Color.Red)
                     }
                 }
             },
-            shape = MaterialTheme.shapes.medium
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Password Input
+        // Contraseña
         OutlinedTextField(
             value = authViewModel.registerPassword,
-            onValueChange = { authViewModel.validatePassword(it) },
-            label = { Text(stringResource(R.string.password_hint)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
-            isError = !authViewModel.isPasswordValid,
+            onValueChange = { authViewModel.updateRegisterPassword(it) },
+            label = { Text("Contraseña") },
+            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Password Icon") },
             trailingIcon = {
-                val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                val description = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    AnimatedVisibility(
-                        visible = authViewModel.registerPassword.isNotBlank(),
-                        enter = fadeIn(animationSpec = tween(250)),
-                        exit = fadeOut(animationSpec = tween(250))
-                    ) {
-                        if (authViewModel.isPasswordValid) {
-                            Icon(Icons.Default.CheckCircle, "", tint = Color.Green)
-                        } else {
-                            Icon(Icons.Default.Error, "", tint = Color.Red)
-                        }
-                    }
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(imageVector = image, description)
+                if (authViewModel.registerPassword.isNotEmpty()) {
+                    if (authViewModel.isPasswordValid) {
+                        Icon(Icons.Default.Check, contentDescription = "Válido", tint = Color.Green)
+                    } else {
+                        Icon(Icons.Default.Close, contentDescription = "Inválido", tint = Color.Red)
                     }
                 }
             },
-            shape = MaterialTheme.shapes.medium
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Confirm Password Input
+        // Confirmar Contraseña
         OutlinedTextField(
             value = authViewModel.registerConfirmPassword,
-            onValueChange = { authViewModel.validateConfirmPassword(it) },
-            label = { Text(stringResource(R.string.confirm_password_hint)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
-            isError = !authViewModel.isConfirmPasswordValid,
+            onValueChange = { authViewModel.updateRegisterConfirmPassword(it) },
+            label = { Text("Confirmar Contraseña") },
+            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Confirm Password Icon") },
             trailingIcon = {
-                val image = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                val description = if (confirmPasswordVisible) "Ocultar contraseña" else "Mostrar contraseña"
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    AnimatedVisibility(
-                        visible = authViewModel.registerConfirmPassword.isNotBlank(),
-                        enter = fadeIn(animationSpec = tween(250)),
-                        exit = fadeOut(animationSpec = tween(250))
-                    ) {
-                        if (authViewModel.isConfirmPasswordValid) {
-                            Icon(Icons.Default.CheckCircle, "", tint = Color.Green)
-                        } else {
-                            Icon(Icons.Default.Error, "", tint = Color.Red)
-                        }
-                    }
-                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                        Icon(imageVector = image, description)
+                if (authViewModel.registerConfirmPassword.isNotEmpty()) {
+                    if (authViewModel.isConfirmPasswordValid) {
+                        Icon(Icons.Default.Check, contentDescription = "Válido", tint = Color.Green)
+                    } else {
+                        Icon(Icons.Default.Close, contentDescription = "Inválido", tint = Color.Red)
                     }
                 }
             },
-            shape = MaterialTheme.shapes.medium
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Birthdate Input (simple text for now)
+        // Fecha de Nacimiento
         OutlinedTextField(
             value = authViewModel.registerBirthdate,
-            onValueChange = { authViewModel.validateBirthdate(it) },
-            label = { Text(stringResource(R.string.birthdate_hint)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth(),
-            isError = !authViewModel.isBirthdateValid,
+            onValueChange = { authViewModel.updateRegisterBirthdate(it) },
+            label = { Text("Fecha de Nacimiento (YYYY-MM-DD)") },
+            leadingIcon = { Icon(Icons.Default.Star, contentDescription = "Fecha Nacimiento Icon") }, // Usamos Star como reemplazo
             trailingIcon = {
-                AnimatedVisibility(
-                    visible = authViewModel.registerBirthdate.isNotBlank(),
-                    enter = fadeIn(animationSpec = tween(250)),
-                    exit = fadeOut(animationSpec = tween(250))
-                ) {
+                if (authViewModel.registerBirthdate.isNotEmpty()) {
                     if (authViewModel.isBirthdateValid) {
-                        Icon(Icons.Default.CheckCircle, "", tint = Color.Green)
+                        Icon(Icons.Default.Check, contentDescription = "Válido", tint = Color.Green)
                     } else {
-                        Icon(Icons.Default.Error, "", tint = Color.Red)
+                        Icon(Icons.Default.Close, contentDescription = "Inválido", tint = Color.Red)
                     }
                 }
             },
-            shape = MaterialTheme.shapes.medium
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Profile Photo (Optional) - Placeholder
-        Button(
-            onClick = { /* TODO: Implement profile photo selection */ },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = Color.Transparent,
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-            ),
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Text(stringResource(R.string.profile_photo_optional), modifier = Modifier.padding(vertical = 8.dp))
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Terms and Conditions Checkbox
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .toggleable(
-                    value = authViewModel.registerTermsAccepted,
-                    onValueChange = { authViewModel.registerTermsAccepted = it },
-                    role = Role.Checkbox
-                )
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start
-        ) {
+        // Aceptar Términos y Condiciones
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Checkbox(
-                checked = authViewModel.registerTermsAccepted,
-                onCheckedChange = null // Handled by toggleable modifier
+                checked = authViewModel.acceptedTerms,
+                onCheckedChange = { authViewModel.updateAcceptedTerms(it) }
             )
-            Text(text = stringResource(R.string.terms_and_conditions))
+            Text("Acepto los Términos y Condiciones")
         }
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Register Button
         Button(
             onClick = { authViewModel.register() },
             modifier = Modifier.fillMaxWidth(),
-            enabled = authViewModel.isNameValid && authViewModel.isUsernameValid && authViewModel.isEmailValid &&
-                    authViewModel.isPasswordValid && authViewModel.isConfirmPasswordValid &&
-                    authViewModel.isBirthdateValid && authViewModel.registerTermsAccepted &&
-                    !authViewModel.isLoadingRegister,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ),
-            shape = MaterialTheme.shapes.medium
+            enabled = authViewModel.isNameValid && authViewModel.isUsernameValid &&
+                      authViewModel.isEmailValid && authViewModel.isPasswordValid &&
+                      authViewModel.isConfirmPasswordValid && authViewModel.isBirthdateValid &&
+                      authViewModel.acceptedTerms
         ) {
-            if (authViewModel.isLoadingRegister) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
-            } else {
-                Text(stringResource(R.string.sign_up_button), modifier = Modifier.padding(vertical = 8.dp))
-            }
+            Text("Registrarse")
         }
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // Error Message
-        authViewModel.registerError?.let { error ->
-            Text(
-                text = error,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 16.dp)
-            )
+        if (authViewModel.authState == "Loading") {
+            CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
+        } else if (authViewModel.authState == "Registered") {
+            Text("Registro exitoso", color = Color.Green, modifier = Modifier.padding(top = 16.dp))
+        } else if (authViewModel.authState == "Error") {
+            Text("Error en el registro. Por favor, verifica tus datos.", color = Color.Red, modifier = Modifier.padding(top = 16.dp))
         }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun RegisterScreenPreview() {
-    PremiumAppTheme {
-        RegisterScreen(navController = rememberNavController())
+fun PreviewRegisterScreen() {
+    MaterialTheme {
+        RegisterScreen()
     }
 }
